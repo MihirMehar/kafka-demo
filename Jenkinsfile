@@ -1,11 +1,37 @@
 pipeline {
     agent any
+
     stages {
-        stage('Checkout Code') { ... }
-        stage('Build') { ... }
-        stage('Run Tests') { ... }
-        stage('Build Docker Image') { ... }
-        stage('Deploy') {   // <-- yeh naya add kiya
+        stage('Checkout Code') {
+            steps {
+                echo 'Checking out code from GitHub...'
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Building the project with Maven...'
+                sh 'chmod +x mvnw'
+                sh './mvnw clean package -DskipTests'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                echo 'Running unit tests...'
+                sh './mvnw test'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                echo 'Building Docker image...'
+                sh 'docker build -t kafka-demo-app:latest .'
+            }
+        }
+
+       stage('Deploy') {   // <-- yeh naya add kiya
             steps {
                 echo 'Deploying new container...'
                 sh 'docker stop kafka-demo-app-container || true'
@@ -20,7 +46,20 @@ pipeline {
                 '''
             }
         }
-        stage('Done') { ... }
+
+        stage('Done') {
+            steps {
+                echo '✅ Pipeline completed successfully! Build + Test + Docker Image — sab automated ho gaya.'
+            }
+        }
     }
-    post { ... }
+
+    post {
+        success {
+            echo '🎉 Build SUCCESS'
+        }
+        failure {
+            echo '❌ Build FAILED — check logs above'
+        }
+    }
 }
